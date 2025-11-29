@@ -3,17 +3,14 @@
 from dataclasses import dataclass
 
 
+from dataclasses import dataclass
+
 @dataclass
 class AudioConfig:
-    """
-    오디오 캡처 관련 설정.
-    - chunk_duration_sec: 한 번에 녹음할 길이 (5초)
-    """
-    device_name: str = "CABLE Output"  # VB-Cable Output 이름 일부
+    device_name: str = "CABLE Output"
     sample_rate: int = 16000
-    channels: int = 1
-    chunk_duration_sec: float = 5.0    # 🔥 5초 단위 녹음
-
+    channels: int = 1              # 🔥 새로 추가 (모노)
+    chunk_duration_sec: float = 0.5  # 프레임 길이(예: 0.5초)
 
 @dataclass
 class STTConfig:
@@ -28,7 +25,7 @@ class STTConfig:
     model_name: str = "small"          # 정확도 고려해서 small 기본
     device: str = "cuda"               # 🔥 GPU 사용
     compute_type: str = "float16"      # GPU용 추천
-    language: str | None = None        # main_stream에서 ko/en으로 설정
+    language: str | None = None     # main_stream에서 ko/en으로 설정
 
 
 @dataclass
