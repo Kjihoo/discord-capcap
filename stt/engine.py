@@ -3,19 +3,6 @@
 import os
 import sys
 
-# 1️⃣ Windows에서 CUDA / cuDNN DLL 경로를 "미리" 등록
-if sys.platform == "win32":
-    cuda_paths = [
-        r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.4\bin",
-        r"C:\Program Files\NVIDIA\CUDNN\v9.16\bin\12.9",  # 여기도 혹시 모를 대비
-    ]
-    for p in cuda_paths:
-        if os.path.isdir(p):
-            try:
-                os.add_dll_directory(p)
-                print(f"[*] DLL 경로 추가: {p}")
-            except Exception as e:
-                print(f"[WARN] DLL 경로 추가 실패 ({p}): {e}")
 
 from typing import Protocol
 import numpy as np
@@ -77,6 +64,21 @@ class FasterWhisperEngine:
 
 
 def create_stt_engine(cfg: STTConfig) -> ISTTEngine:
+    # 🔥 CUDA 쓸 때만 DLL 경로 추가
+    if sys.platform == "win32" and cfg.device == "cuda":
+        cuda_paths = [
+            r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.4\bin",
+            r"C:\Program Files\NVIDIA\CUDNN\v9.16\bin\12.9",
+        ]
+        for p in cuda_paths:
+            if os.path.isdir(p):
+                try:
+                    os.add_dll_directory(p)
+                    print(f"[*] DLL 경로 추가: {p}")
+                except Exception as e:
+                    print(f"[WARN] DLL 경로 추가 실패 ({p}): {e}")
+
     if cfg.engine_type == "faster_whisper":
         return FasterWhisperEngine(cfg)
-    raise ValueError(f"지원하지 않는 STT 엔진 타입입니다: {cfg.engine_type}")
+    else:
+        raise ValueError(f"지원하지 않는 STT 엔진: {cfg.engine_type}")
