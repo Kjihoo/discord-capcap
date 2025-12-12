@@ -29,9 +29,9 @@ def run_stream_pipeline_vad(app_cfg: AppConfig, caption_callback=None):
     # VAD 파라미터
     VOICE_ENERGY_TH   = 0.005
     SILENCE_ENERGY_TH = 0.004
-    MIN_UTTER_SEC     = 0.7
+    MIN_UTTER_SEC     = 0.8
     MAX_UTTER_SEC     = 15.0
-    END_SILENCE_SEC   = 0.45
+    END_SILENCE_SEC   = 0.40
 
     print("=== STREAM (VAD + endpoint, 디코 대화용) ===")
 
@@ -201,6 +201,7 @@ def run_stream_pipeline_fixed(
                 print(f"[*] STT 변환 완료(FIXED): {stt_dur:.2f}s")
 
             if not text:
+                caption_callback("...", None)
                 continue
 
             print(f"[STT] '{text}'")

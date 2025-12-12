@@ -47,8 +47,13 @@ class FasterWhisperEngine:
 
         segments, info = self.model.transcribe(
             audio,
-            language=language,   # 언어 고정 (None이면 자동 감지)
-            beam_size=5,
+            language=self.language,  # "ko"로 강제
+            task="transcribe",  # 번역 금지
+            beam_size=5,  # 높이면 정확도 증가
+            best_of=5,
+            temperature=0.0,  # 추측 최소화
+            compression_ratio_threshold=2.0,
+            no_speech_threshold=0.1,
         )
 
         texts: list[str] = []

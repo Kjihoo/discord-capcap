@@ -22,7 +22,7 @@ class STTConfig:
     - language: "ko" or "en" 으로 고정 (None이면 자동 감지)
     """
     engine_type: str = "faster_whisper"
-    model_name: str = "small"          # 정확도 고려해서 small 기본
+    model_name: str = "medium"          # 정확도 고려해서 small 기본
     device: str = "cuda"               # 🔥 GPU 사용
     compute_type: str = "float16"      # GPU용 추천
     language: str | None = None     # main_stream에서 ko/en으로 설정
