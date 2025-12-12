@@ -11,10 +11,38 @@ from core.config import AppConfig
 from audio.capture import resolve_device_index, record_once_with_index
 from stt.engine import create_stt_engine
 from core.debug_config import DEBUG, DEBUG_VAD, DEBUG_STT, DEBUG_CAPTURE
+from core.translate import translate_text
+
 
 AudioChunk = Tuple[np.ndarray, int]
 CaptionCallback = Callable[[str, Optional[str]], None]
 
+def process_caption_text(
+    stt_text: str,
+    app_cfg: AppConfig,
+) -> tuple[str, str]:
+    """
+    STT 결과를 받아서:
+    - original_text: STT 원문
+    - caption_text: 자막에 표시할 텍스트 (번역 적용)
+    """
+    original_text = stt_text.strip()
+    if not original_text:
+        return "", ""
+
+    speech_lang = app_cfg.stt.speech_language
+    caption_lang = app_cfg.stt.caption_language
+
+    if caption_lang == speech_lang:
+        return original_text, original_text
+
+    translated = translate_text(
+        text=original_text,
+        src=speech_lang,
+        tgt=caption_lang,
+    )
+
+    return original_text, translated
 
 # ------------------- 1) 디코 대화용 (VAD + endpoint) ------------------- #
 def run_stream_pipeline_vad(app_cfg: AppConfig, caption_callback=None):
@@ -74,20 +102,22 @@ def run_stream_pipeline_vad(app_cfg: AppConfig, caption_callback=None):
         if DEBUG_STT:
             print(f"[STT] START: duration={current_dur:.2f}s")
 
-        text = stt_engine.transcribe(audio, sr).strip()
+        stt_text = stt_engine.transcribe(audio, sr).strip()
 
         if DEBUG_STT:
-            print(f"[STT] END: '{text}'")
+            print(f"[STT] RAW: '{stt_text}'")
 
-        if not text:
+        original, caption = process_caption_text(stt_text, app_cfg)
+
+        if not original:
             current_frames = []
             current_dur = 0.0
             return
 
         if caption_callback:
-            caption_callback(text, text)
+            caption_callback(caption, original)
         else:
-            print(">>>", text)
+            print(">>>", caption)
 
         current_frames = []
         current_dur = 0.0
@@ -195,21 +225,19 @@ def run_stream_pipeline_fixed(
             if DEBUG_STT:
                 print(f"[*] STT 호출(FIXED): duration≈{chunk_sec:.2f}s, samples={len(audio_data)}")
 
-            text = stt_engine.transcribe(audio_data, sr).strip()
-            stt_dur = time.time() - stt_start
-            if DEBUG_STT:
-                print(f"[*] STT 변환 완료(FIXED): {stt_dur:.2f}s")
+            stt_text = stt_engine.transcribe(audio_data, sr).strip()
 
-            if not text:
-                caption_callback("...", None)
+            original, caption = process_caption_text(stt_text, app_cfg)
+
+            if not original:
+                if caption_callback:
+                    caption_callback("...", None)
                 continue
 
-            print(f"[STT] '{text}'")
-
             if caption_callback:
-                caption_callback(text, text)
+                caption_callback(caption, original)
             else:
-                print(f">>> [CAPTION] {text}")
+                print(f">>> [CAPTION] {caption}")
 
     t_cap = threading.Thread(target=capture_worker, daemon=True)
     t_stt = threading.Thread(target=stt_worker, daemon=True)
