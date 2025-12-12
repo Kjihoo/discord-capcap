@@ -1,4 +1,5 @@
 from PyQt6 import QtWidgets, QtCore, QtGui
+from ui.overlay_caption_manager import CaptionManager
 
 
 class CaptionOverlay(QtWidgets.QWidget):
@@ -23,7 +24,7 @@ class CaptionOverlay(QtWidgets.QWidget):
         y = int(screen.height() - height - 80)
         self.setGeometry(x, y, width, height)
 
-        # 배경 + 텍스트
+        # ---------------- UI ----------------
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
@@ -36,6 +37,7 @@ class CaptionOverlay(QtWidgets.QWidget):
 
         self.label = QtWidgets.QLabel(self)
         self.label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.label.setWordWrap(True)
         self.label.setStyleSheet(
             "color: white;"
             "font-size: 22px;"
@@ -44,7 +46,27 @@ class CaptionOverlay(QtWidgets.QWidget):
 
         layout.addWidget(self.label)
 
+        # ✅ 자막 관리기 복구
+        self.caption_manager = CaptionManager(
+            max_chars_per_line=25,
+            max_lines=2,
+        )
+
         self.caption_changed.connect(self._on_caption_changed)
 
+        # 우클릭 종료 메뉴
+        self._setup_context_menu()
+
+    def _setup_context_menu(self):
+        self.setContextMenuPolicy(
+            QtCore.Qt.ContextMenuPolicy.ActionsContextMenu
+        )
+
+        quit_action = QtGui.QAction("종료", self)
+        quit_action.triggered.connect(QtWidgets.QApplication.quit)
+        self.addAction(quit_action)
+
     def _on_caption_changed(self, text: str):
-        self.label.setText(text)
+        result = self.caption_manager.push(text)
+        if result:
+            self.label.setText(result)
